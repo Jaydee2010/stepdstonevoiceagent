@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Talk to the AI Receptionist | Stepstone</title>
+<meta name="description" content="Talk to an AI receptionist built for garage door companies. One tap, no signup.">
+<style>
+  :root { --bg:#111; --card:#1a1a1a; --line:#2a2a2a; --orange:#ff6b35; --dim:#a8a8a8; --red:#e5484d; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; width:100%; overflow-x:hidden; }
+  body {
+    font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:#fff;
+    min-height:100vh; display:flex; justify-content:center;
+    padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
+  }
+  main { width:100%; max-width:420px; text-align:center; display:flex; flex-direction:column; align-items:center; }
+  .eyebrow { color:var(--orange); font-size:12px; font-weight:bold; letter-spacing:2px; margin:8px 0 18px; }
+  h1 { font-size:clamp(24px, 7vw, 30px); line-height:1.25; margin:0 0 14px; }
+  .sub { color:#ddd; font-size:16px; line-height:1.5; margin:0 0 28px; }
+
+  .talk {
+    width:100%; max-width:340px; min-height:64px; border:0; border-radius:999px;
+    background:var(--orange); color:#fff; font-size:18px; font-weight:bold; cursor:pointer;
+    box-shadow:0 4px 18px rgba(255,107,53,.45); animation:pulse 2s infinite;
+    transition:background .2s, transform .1s;
+  }
+  .talk:active { transform:scale(.98); }
+  .talk:disabled { opacity:.7; cursor:wait; animation:none; }
+  .talk.live { background:var(--red); animation:none; box-shadow:0 0 0 0 rgba(229,72,77,.5); }
+  .talk.live.speaking { animation:speak 1.1s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,107,53,.55)} 70%{box-shadow:0 0 0 16px rgba(255,107,53,0)} 100%{box-shadow:0 0 0 0 rgba(255,107,53,0)} }
+  @keyframes speak { 0%{box-shadow:0 0 0 0 rgba(229,72,77,.55)} 70%{box-shadow:0 0 0 18px rgba(229,72,77,0)} 100%{box-shadow:0 0 0 0 rgba(229,72,77,0)} }
+
+  .hint { color:var(--dim); font-size:13px; line-height:1.5; margin:14px 0 0; min-height:20px; }
+  .try { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; font-size:14px; color:#ddd; line-height:1.5; margin:22px 0 0; }
+  .try b { color:var(--orange); }
+
+  #after { display:none; width:100%; margin-top:26px; background:var(--card); border:1px solid var(--orange); border-radius:14px; padding:22px 18px; }
+  #after.show { display:block; animation:fade .4s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+  #after h2 { font-size:19px; margin:0 0 8px; }
+  #after p { color:#ddd; font-size:15px; line-height:1.5; margin:0 0 16px; }
+  #after p b { color:var(--orange); }
+  .dm-btn { display:block; background:var(--orange); color:#fff; text-decoration:none; font-weight:bold; font-size:16px; padding:15px 18px; border-radius:999px; }
+
+  .dm-small { margin-top:30px; color:var(--orange); font-size:14px; text-decoration:none; }
+  .legal { color:#777; font-size:11px; line-height:1.5; margin:22px 0 0; max-width:320px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">STEPSTONE</div>
+  <h1>You're under a door, hands full, and the phone rings.</h1>
+  <p class="sub">That's a $600 job walking to the next name on Google. Talk to the AI receptionist that picks it up.</p>
+
+  <button id="talk" class="talk" type="button">Talk to it</button>
+  <p id="hint" class="hint">Your phone will ask to use the microphone. Tap Allow.</p>
+
+  <div class="try"><b>Try saying:</b> "My garage door came off the track and my car's stuck inside."</div>
+
+  <section id="after">
+    <h2>That's how it sounds on your line.</h2>
+    <p>Want this answering your phone? Send me the word <b>DEMO</b> on Instagram.</p>
+    <a class="dm-btn" id="dmBtn" href="https://ig.me/m/millerfakpor" target="_blank" rel="noopener">Message me on Instagram</a>
+  </section>
+
+  <a class="dm-small" id="dmSmall" href="https://ig.me/m/millerfakpor" target="_blank" rel="noopener">Questions? Message me on Instagram</a>
+  <p class="legal">You're talking to an AI. Calls may be recorded to improve the service.</p>
+</main>
+
+<script type="module">
+  // ---- Settings you may want to change ----
+  const PUBLIC_KEY   = "c41f9085-c1f1-4fe3-b5fe-0f03b629d422";
+  const ASSISTANT_ID = "eadca38a-96c2-4cf8-80c7-31ac1ad1a401";
+  const MAX_SECONDS  = 180;   // auto-ends the call to protect your balance
+  const SLOW_SECONDS = 8;     // shows the "open in browser" tip if connecting takes this long
+  const IG_USER      = "millerfakpor";
+  // -----------------------------------------
+
+  const talk = document.getElementById("talk");
+  const hint = document.getElementById("hint");
+  const after = document.getElementById("after");
+  const IDLE_HINT = hint.textContent;
+
+  // ig.me DM links only work on phones, so desktop visitors get the profile instead
+  if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    const profile = "https://www.instagram.com/" + IG_USER + "/";
+    document.getElementById("dmBtn").href = profile;
+    document.getElementById("dmSmall").href = profile;
+  }
+
+  let vapi = null, state = "idle", maxTimer = null, slowTimer = null;
+
+  // Load the Vapi SDK in the background so the first tap is fast
+  const sdkReady = import("https://esm.sh/@vapi-ai/web@3.0.0").then(m => {
+    const Vapi = (m.default && m.default.default) || m.default;
+    vapi = new Vapi(PUBLIC_KEY);
+    vapi.on("call-start", () => { clearTimeout(slowTimer); setState("live"); });
+    vapi.on("call-end", () => setState("ended"));
+    vapi.on("speech-start", () => talk.classList.add("speaking"));
+    vapi.on("speech-end", () => talk.classList.remove("speaking"));
+    vapi.on("error", () => { if (state !== "ended") setState("error"); });
+  }).catch(() => { vapi = null; });
+
+  function setState(s) {
+    state = s;
+    clearTimeout(slowTimer);
+    talk.classList.remove("speaking");
+    if (s === "idle")       { talk.disabled = false; talk.className = "talk"; talk.textContent = "Talk to it"; hint.textContent = IDLE_HINT; }
+    if (s === "connecting") { talk.disabled = true;  talk.textContent = "Connecting..."; hint.textContent = "Connecting. Say hello when it picks up.";
+      slowTimer = setTimeout(() => { hint.textContent = "Taking a while? Tap the three dots at the top right and choose Open in browser, then try again."; }, SLOW_SECONDS * 1000); }
+    if (s === "live")       { talk.disabled = false; talk.className = "talk live"; talk.textContent = "End call"; hint.textContent = "You're live. Talk like a real customer would.";
+      clearTimeout(maxTimer); maxTimer = setTimeout(() => vapi && vapi.stop(), MAX_SECONDS * 1000); }
+    if (s === "ended")      { clearTimeout(maxTimer); talk.disabled = false; talk.className = "talk"; talk.textContent = "Talk to it again"; hint.textContent = "";
+      after.classList.add("show"); setTimeout(() => after.scrollIntoView({ behavior: "smooth", block: "center" }), 250); }
+    if (s === "denied")     { talk.disabled = false; talk.className = "talk"; talk.textContent = "Try again";
+      hint.textContent = "The microphone is blocked. Allow it in your browser's site settings, then try again, or just message me on Instagram."; }
+    if (s === "error")      { clearTimeout(maxTimer); talk.disabled = false; talk.className = "talk"; talk.textContent = "Try again";
+      hint.textContent = "Couldn't connect. Tap to try again, or message me on Instagram."; }
+  }
+
+  talk.addEventListener("click", async () => {
+    if (state === "live") { vapi && vapi.stop(); return; }
+    if (state === "connecting") return;
+    setState("connecting");
+    try {
+      // Ask for the mic first so a refusal is handled clearly, then start the call on the same tap
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+    } catch (e) { setState("denied"); return; }
+    await sdkReady;
+    if (!vapi) { setState("error"); return; }
+    try { await vapi.start(ASSISTANT_ID); } catch (e) { setState("error"); }
+  });
+</script>
+</body>
+</html>
